@@ -21,17 +21,32 @@ st.header("Upload Wastewater Image", anchor="upload_image")
 uploaded_file = st.file_uploader("Upload Wastewater Image", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
-    # Load and display image for annotation
+    # Load image
     image = Image.open(uploaded_file)
     img_np = np.array(image)
     
-    # Create canvas for manual selection
+    # Convert to HSV to adjust brightness
+    img_hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
+    # Increase value (brightness) by 30%
+    img_hsv[:,:,2] = np.clip(img_hsv[:,:,2] * 1.3, 0, 255)
+    # Convert back to RGB
+    brightened_img = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2RGB)
+    brightened_pil = Image.fromarray(brightened_img)
+    
+    # Show original vs brightened image
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(image, caption="Original Image", use_column_width=True)
+    with col2:
+        st.image(brightened_pil, caption="Enhanced Image", use_column_width=True)
+    
+    # Use the brightened image for the canvas
     st.markdown("**Draw a rectangle around the wastewater area:**")
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",
         stroke_width=2,
         stroke_color="#00FF00",
-        background_image=image,
+        background_image=brightened_pil,  # Use brightened image
         height=image.height,
         width=image.width,
         drawing_mode="rect",
